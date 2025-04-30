@@ -1,47 +1,68 @@
 import numpy as np
 
 class GHA:
-    def __init__(self, input_dim, num_components, learning_rate=0.001):
+    def __init__(self, input_dim, num_components):
         self.m = input_dim           # Input vector size (64)
         self.l = num_components      # Number of principal components
-        self.eta = learning_rate     # Learning rate
         self.W = np.random.randn(self.l, self.m) * 0.01
+        self.W -= np.mean(self.W, axis=1, keepdims=True)  # Center the weights
+        #print('Self W mean:', np.mean(self.W, axis=1, keepdims=True))
 
-    def train_parallel(self, X, epochs=100):
+    def train_parallel(self, X, epochs=100, lr=0.001):
         for epoch in range(epochs):
             np.random.shuffle(X)
             for x in X: 
                 x = x.reshape(-1, 1)
                 y = self.W @ x
-                delta_W = self.eta * ((y @ x.T) - np.tril(y @ y.T) @ self.W)
+                delta_W = lr * ((y @ x.T) - np.tril(y @ y.T) @ self.W)
                 self.W += delta_W
 
             if np.any(np.isnan(self.W)):
                 print(f"❌ NaNs detected at epoch {epoch}, stopping early. Check if inputs are normalized.")
                 break
 
-            self.eta *= 0.99
+            lr *= 0.99
         
-        #self.W /= np.linalg.norm(self.W, axis=1, keepdims=True)
+        self.W /= np.linalg.norm(self.W, axis=1, keepdims=True)
 
-    def train_sequential(self, X, epochs=100, tolerance=1e-5):
+    
+    def train_sequential(self, X, epochs=100, lr=0.001):
         components = []
         residual = X.copy()
 
         for i in range(self.l):
-            print(f"- Sequential training: component {i+1}/{self.l}")
-            # 1-component GHA
-            gha_1 = GHA(input_dim=self.m, num_components=1, learning_rate=self.eta)
-            gha_1.train(residual, epochs)
+            if i % 8 == 0:
+                print(f"- Sequential training: component {i+1}/{self.l}")
+            # Create a fresh 1-component GHA model
+            gha_1 = GHA(input_dim=self.m, num_components=1)
+            gha_1._train_one_component(residual, epochs, lr)
             w = gha_1.get_components()[0]
-            w /= np.linalg.norm(w)  # normalize manually
+            w /= np.linalg.norm(w)  # Ensure unit norm
             components.append(w)
 
-            # Project out the learned component
+            # Project out the learned component (deflation)
             projections = residual @ w
             residual -= np.outer(projections, w)
 
-        #self.W = np.vstack(components)
+        self.W = np.vstack(components)
+
+    def _train_one_component(self, X, epochs=100, lr=0.001):
+        for epoch in range(epochs):
+            np.random.shuffle(X)
+            for x in X:
+                x = x.reshape(-1, 1)
+                y = self.W @ x  # scalar output
+                delta_W = lr * y * (x.T - y * self.W)
+                self.W += delta_W
+
+            if np.any(np.isnan(self.W)):
+                print(f"❌ NaNs detected at epoch {epoch}, stopping.")
+                break
+
+            lr *= 0.99
+
+        # Normalize final component
+        self.W = self.W / np.linalg.norm(self.W)
 
     def get_components(self):
         return self.W.copy()

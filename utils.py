@@ -132,6 +132,8 @@ def reconstruct_image(encoded_blocks, mean_vector, components):
     # Convert to image format (256, 256)
     image = blocks_to_image(blocks_4d)
 
+    image = np.clip(image, 0, 1)
+
     return image
 
 def reconstruct_blocks(encoded_blocks, mean_vector, components):

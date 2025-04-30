@@ -112,8 +112,8 @@ def check_component_properties(components, atol=1e-2):
     for i in range(k):
         for j in range(i + 1, k):
             dot_product = np.dot(components[i], components[j])
-            print(f"  Dot(PC{i+1}, PC{j+1}) = {dot_product:.4f}")
             if not np.isclose(dot_product, 0.0, atol=atol):
+                print(f"  Dot(PC{i+1}, PC{j+1}) = {dot_product:.4f}")
                 all_orthogonal = False
 
     if all_orthogonal:
@@ -150,4 +150,4 @@ def reshape_blocks(flat_blocks):
 
 def blocks_to_image(blocks_4d):
     # From (32, 32, 8, 8) to (256, 256)
-    return blocks_4d.transpose(0, 2, 1, 3).reshape(256, 256)
+    return np.clip(blocks_4d.transpose(0, 2, 1, 3).reshape(256, 256), 0.0, 1.0)

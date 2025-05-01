@@ -9,6 +9,7 @@ def load_image(image_path):
 
 image = load_image('images/lenna.png')
 
+
 print("Image shape:", image.shape)
 print("Image dtype:", image.dtype)
 print("Image size:", image.size)

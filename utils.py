@@ -1,41 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from GHA import GHA
-
-def sequential_gha(X, num_components=16, learning_rate=0.001, max_epochs=200):
-    """
-    Sequentially extract num_components using 1-neuron GHA and deflation.
-    """
-    d = X.shape[1]
-    components = []
-
-    residual = X.copy()
-
-    for i in range(num_components):
-        print(f"🔹 Training component {i+1}/{num_components}")
-        
-        # Train 1-neuron GHA
-        gha = GHA(
-            input_dim=d,
-            num_components=1,
-            learning_rate=learning_rate,
-        )
-        gha.train(residual, epochs=max_epochs)
-        w = gha.get_components()[0]  # shape (d,)
-
-        # Normalize (optional but recommended)
-        w = w / np.linalg.norm(w)
-        components.append(w)
-
-        # Project w out of the residual
-        projections = residual @ w  # shape (n_samples,)
-        residual -= np.outer(projections, w)  # deflation step
-
-    return np.array(components)  # shape (k, d)
 
 def load_image(image_path):
-    image = Image.open(image_path)
+    image = Image.open(image_path).convert('L')
     return np.array(image)
 
 
@@ -153,3 +121,33 @@ def reshape_blocks(flat_blocks):
 def blocks_to_image(blocks_4d):
     # From (32, 32, 8, 8) to (256, 256)
     return blocks_4d.transpose(0, 2, 1, 3).reshape(256, 256)
+
+
+def plot_pca_eigenvalues(centered_data):
+    cov_matrix = centered_data.T @ centered_data / centered_data.shape[0]
+    eigenvalues, _ = np.linalg.eigh(cov_matrix)
+    eigenvalues = np.flip(np.sort(eigenvalues))
+
+    plt.figure(figsize=(10, 4))
+    plt.plot(eigenvalues, marker='o')
+    plt.title("Eigenvalues of the PCA Correlation Matrix")
+    plt.xlabel("Principal Component Index")
+    plt.ylabel("Eigenvalue")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def visualize_component_coefficients(encoded_blocks, num_components=8, block_grid_shape=(32, 32)):
+    
+    plt.figure(figsize=(2 * num_components, 2))
+
+    for i in range(num_components):
+        coeffs = encoded_blocks[:, i].reshape(block_grid_shape)
+        plt.subplot(1, num_components, i + 1)
+        plt.imshow(coeffs, cmap='gray')
+        plt.axis('off')
+        plt.title(f"C{i+1}")
+
+    plt.tight_layout()
+    plt.show()

@@ -8,9 +8,12 @@ class GHA:
         self.W -= np.mean(self.W, axis=1, keepdims=True)  # Center the weights
         #print('Self W mean:', np.mean(self.W, axis=1, keepdims=True))
 
-    def train_parallel(self, X, epochs=100, lr=0.001):
+    def train_parallel(self, X, epochs=100, lr_s=0.001, lr_f=0.0001):
         for epoch in range(epochs):
             np.random.shuffle(X)
+
+            lr = lr_s * ((lr_f / lr_s) ** (epoch / epochs-1))
+
             for x in X: 
                 x = x.reshape(-1, 1)
                 y = self.W @ x
@@ -21,12 +24,11 @@ class GHA:
                 print(f"❌ NaNs detected at epoch {epoch}, stopping early. Check if inputs are normalized.")
                 break
 
-            lr *= 0.99
         
         self.W /= np.linalg.norm(self.W, axis=1, keepdims=True)
 
     
-    def train_sequential(self, X, epochs=100, lr=0.001):
+    def train_sequential(self, X, epochs=100, lr_s=0.001, lr_f=0.0001):
         components = []
         residual = X.copy()
 
@@ -35,7 +37,7 @@ class GHA:
                 print(f"- Sequential training: component {i+1}/{self.l}")
             # Create a fresh 1-component GHA model
             gha_1 = GHA(input_dim=self.m, num_components=1)
-            gha_1._train_one_component(residual, epochs, lr)
+            gha_1._train_one_component(residual, epochs, lr_s, lr_f)
             w = gha_1.get_components()[0]
             w /= np.linalg.norm(w)  # Ensure unit norm
             components.append(w)
@@ -46,9 +48,12 @@ class GHA:
 
         self.W = np.vstack(components)
 
-    def _train_one_component(self, X, epochs=100, lr=0.001):
+    def _train_one_component(self, X, epochs=100, lr_s=0.001, lr_f=0.0001):
         for epoch in range(epochs):
             np.random.shuffle(X)
+
+            lr = lr_s * ((lr_f / lr_s) ** (epoch / epochs-1))
+
             for x in X:
                 x = x.reshape(-1, 1)
                 y = self.W @ x  # scalar output
@@ -58,8 +63,6 @@ class GHA:
             if np.any(np.isnan(self.W)):
                 print(f"❌ NaNs detected at epoch {epoch}, stopping.")
                 break
-
-            lr *= 0.99
 
         # Normalize final component
         self.W = self.W / np.linalg.norm(self.W)

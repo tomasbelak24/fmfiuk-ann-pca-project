@@ -41,7 +41,7 @@ class GHA:
             gha_1 = GHA(input_dim=self.m, num_components=1)
             gha_1._train_one_component(residual, epochs_per_component, lr_s, lr_f)
             w = gha_1.get_components()[0]
-            w /= np.linalg.norm(w)  # Ensure unit norm
+            #w /= np.linalg.norm(w)  # Ensure unit norm
             components.append(w)
 
             # Project out the learned component (deflation)
@@ -49,6 +49,7 @@ class GHA:
             residual -= np.outer(projections, w)
 
         self.W = np.vstack(components)
+        self.W /= np.linalg.norm(self.W, axis=1, keepdims=True)
 
     def _train_one_component(self, X, epochs=100, lr_s=0.001, lr_f=0.0001):
         for epoch in range(epochs):
@@ -67,7 +68,7 @@ class GHA:
                 break
 
         # Normalize final component
-        self.W = self.W / np.linalg.norm(self.W)
+        #self.W = self.W / np.linalg.norm(self.W)
 
     def get_components(self):
         return self.W.copy()

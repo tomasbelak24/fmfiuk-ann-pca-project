@@ -64,25 +64,38 @@ def show_original_vs_reconstructed(original, reconstructed, k):
     plt.show()
 
 
-def check_component_properties(components, atol=1e-2):
+def check_component_properties(components, atol=1e-2, verbose=True):
     k, d = components.shape
     print(f"Checking {k} components of dimension {d}")
 
     # Normalize components to compute dot products cleanly
     norms = np.linalg.norm(components, axis=1)
-    print("Vector norms (should be ~1):")
+    not_unit_lenght = 0
     for i, norm in enumerate(norms):
-        print(f"  Component {i+1}: norm = {norm:.4f}")
-    
+        if verbose:
+            print("Vector norms (should be ~1):")
+            print(f"  Component {i+1}: norm = {norm:.4f}")
+        if not np.isclose(norm, 1.0, atol=atol):
+            not_unit_lenght += 1
+    if not_unit_lenght > 0:
+        print(f"\n⚠️ {not_unit_lenght} components are not unit length.")
+    else:
+        print("\n✅ All components are unit length.")
+            
     # Check orthogonality (dot product between pairs)
-    print("\nOrthogonality check (dot products between pairs):")
     all_orthogonal = True
     for i in range(k):
         for j in range(i + 1, k):
             dot_product = np.dot(components[i], components[j])
-            print(f"  Dot(PC{i+1}, PC{j+1}) = {dot_product:.4f}")
+            if verbose:
+                print("\nOrthogonality check (dot products between pairs):")
+                print(f"  Dot(PC{i+1}, PC{j+1}) = {dot_product:.4f}")
             if not np.isclose(dot_product, 0.0, atol=atol):
                 all_orthogonal = False
+                break
+        
+        if not all_orthogonal:
+            break
 
     if all_orthogonal:
         print("\n✅ All components are approximately orthogonal.")

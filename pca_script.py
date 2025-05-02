@@ -34,7 +34,7 @@ print("mean vector shape:", mean_vector.shape)
 #centered_blocks
 
 # %%
-ks = (8, 16, 32, 48, 64)
+ks = (8,)
 models = dict()
 
 for k in ks:
@@ -43,18 +43,24 @@ for k in ks:
     gha = GHA(input_dim=64, num_components=k)
     if k > 16:
         print("Training in parallel mode")
-        gha.train_parallel(centered_blocks, epochs=6000, lr_s=0.001, lr_f=0.0001)
+        gha.train_parallel(centered_blocks, epochs=8000, lr_s=0.001, lr_f=0.0001)
     else:
         print("Training in sequential mode")
-        gha.train_sequential(centered_blocks, epochs_per_component=450, lr_s=0.001, lr_f=0.0001)
+        gha.train_sequential(centered_blocks, epochs_per_component=600, lr_s=0.001, lr_f=0.0001)
     
     models[k] = gha
 
     components = gha.get_components()
+    #if k <= 16:
+    #    err = np.abs(components @ components.T - np.eye(k))
+    #    print("Max error:", err.max())
+
+    check_component_properties(components, verbose=False)
+    print(f"Did the components converge to form a orthonormal basis: {np.allclose(components @ components.T, np.eye(k), atol=1e-4, rtol=1e-4)}")
+    
     print("Principal components: ")
     visualize_components(components, 1, 8)
     #print("Components shape:", components.shape)
-    print(f"Did the components converge to form a orthonormal basis: {np.allclose(components @ components.T, np.eye(k))}")
 
     encoded_blocks = encode_blocks(flattened_blocks, mean_vector, components)
     print("Component coefficients:")
@@ -76,12 +82,15 @@ for k in ks:
     show_original_vs_reconstructed(image, reconstructed_image, k)
 
 # %%
-centered_blocks.shape
+reconstruct_with_first_k_components(flattened_blocks, mean_vector, components, first_k_components=list(range(1, 9)))
+
+# %%
 plot_pca_eigenvalues(centered_blocks)
 
 
 # %%
-k=16
+# @title Generalization on other images
+k=8
 components = models[k].get_components()
 
 other_images = ['images/1.jpg', 'images/2.jpg', 'images/3.jpg']

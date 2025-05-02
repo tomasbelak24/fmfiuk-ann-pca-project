@@ -27,11 +27,14 @@ def mean_center(X):
 
 
 def visualize_components(components, num_rows=2, num_cols=4):
+    vmin = components.min()
+    vmax = components.max()
+
     plt.figure(figsize=(2.5 * num_cols, 2.5 * num_rows))
     for i in range(num_rows * num_cols):
         comp = components[i].reshape(8, 8)
         plt.subplot(num_rows, num_cols, i + 1)
-        plt.imshow(comp, cmap='gray')
+        plt.imshow(comp, cmap='gray', vmin=vmin, vmax=vmax)
         plt.title(f'PC {i+1}')
         plt.axis('off')
     plt.tight_layout()
@@ -152,15 +155,49 @@ def plot_pca_eigenvalues(centered_data):
 
 
 def visualize_component_coefficients(encoded_blocks, num_components=8, block_grid_shape=(32, 32)):
+
+    vmin = np.min(encoded_blocks[:, :num_components])
+    vmax = np.max(encoded_blocks[:, :num_components])
     
     plt.figure(figsize=(2 * num_components, 2))
 
     for i in range(num_components):
         coeffs = encoded_blocks[:, i].reshape(block_grid_shape)
         plt.subplot(1, num_components, i + 1)
-        plt.imshow(coeffs, cmap='gray')
+        plt.imshow(coeffs, cmap='gray', vmin=vmin, vmax=vmax)
         plt.axis('off')
         plt.title(f"C{i+1}")
+
+    plt.tight_layout()
+    plt.show()
+
+
+def reconstruct_with_first_k_components(flattened_blocks, mean_vector, components, first_k_components=list(range(1, 9)), image=None):
+    """
+    Reconstruct the image using the first 1, 2, ..., max_k principal components.
+    """
+    max_k = components.shape[0]
+    fig, axes = plt.subplots(2, max_k // 2, figsize=(15, 6))
+    axes = axes.ravel()
+    calculate_MSE = image is not None
+
+    for k in first_k_components:
+        # Use the first k components
+        selected_components = components[:k, :]
+        
+        # Encode and reconstruct the image
+        encoded_blocks = encode_blocks(flattened_blocks, mean_vector, selected_components)
+        reconstructed_image = reconstruct_image(encoded_blocks, mean_vector, selected_components)
+
+        if calculate_MSE:
+            mse = np.mean((image - reconstructed_image) ** 2)
+            print(f"MSE for k={k}: {mse:.4f}")
+        
+        # Plot the reconstructed image
+        ax = axes[k - 1]
+        ax.imshow(reconstructed_image, cmap='gray')
+        ax.set_title(f'First {k} Components')
+        ax.axis('off')
 
     plt.tight_layout()
     plt.show()

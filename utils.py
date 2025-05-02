@@ -14,7 +14,7 @@ def blockify(image, h, w):
     num_blocks_y = H // h
     num_blocks_x = W // w
 
-    # Reshape and swap axes to extract blocks
+    # reshape and swap axes to extract blocks
     blocks = image.reshape(num_blocks_y, h, num_blocks_x, w).swapaxes(1, 2)
     
     return blocks
@@ -71,7 +71,7 @@ def check_component_properties(components, atol=1e-2, verbose=True):
     k, d = components.shape
     print(f"Checking {k} components of dimension {d}")
 
-    # Normalize components to compute dot products cleanly
+    # normalize components to compute dot products cleanly (they should be normalized already)
     norms = np.linalg.norm(components, axis=1)
     not_unit_lenght = 0
     for i, norm in enumerate(norms):
@@ -85,7 +85,7 @@ def check_component_properties(components, atol=1e-2, verbose=True):
     else:
         print("\n✅ All components are unit length.")
             
-    # Check orthogonality (dot product between pairs)
+    # check orthogonality (dot product between pairs == 0)
     all_orthogonal = True
     for i in range(k):
         for j in range(i + 1, k):
@@ -107,13 +107,13 @@ def check_component_properties(components, atol=1e-2, verbose=True):
 
 
 def reconstruct_image(encoded_blocks, mean_vector, components):
-    # Reconstruct the blocks from the encoded data
+    # reconstruct the blocks from the encoded data
     reconstructed_blocks = reconstruct_blocks(encoded_blocks, mean_vector, components)
 
-    # Reshape to (32, 32, 8, 8)
+    # reshape to (32, 32, 8, 8)
     blocks_4d = reshape_blocks(reconstructed_blocks)
 
-    # Convert to image format (256, 256)
+    # convert to image format (256, 256)
     image = blocks_to_image(blocks_4d)
 
     image = np.clip(image, 0, 1)
@@ -121,21 +121,21 @@ def reconstruct_image(encoded_blocks, mean_vector, components):
     return image
 
 def reconstruct_blocks(encoded_blocks, mean_vector, components):
-    # Reconstruct centered data
+    # reconstruct centered data
     reconstructed_centered = encoded_blocks @ components  # shape: (1024, 64)
 
-    # Add the mean back
+    # add the mean back
     reconstructed = reconstructed_centered + mean_vector  # broadcast: (1024, 64)
 
     return reconstructed
 
 def reshape_blocks(flat_blocks):
-    # Reshape from (1024, 64) → (32, 32, 8, 8)
+    # reshape from (1024, 64) → (32, 32, 8, 8)
     return flat_blocks.reshape(32, 32, 8, 8)
 
 
 def blocks_to_image(blocks_4d):
-    # From (32, 32, 8, 8) to (256, 256)
+    # from (32, 32, 8, 8) to (256, 256)
     return blocks_4d.transpose(0, 2, 1, 3).reshape(256, 256)
 
 
@@ -173,19 +173,16 @@ def visualize_component_coefficients(encoded_blocks, num_components=8, block_gri
 
 
 def reconstruct_with_first_k_components(flattened_blocks, mean_vector, components, first_k_components=list(range(1, 9)), image=None):
-    """
-    Reconstruct the image using the first 1, 2, ..., max_k principal components.
-    """
     max_k = components.shape[0]
     fig, axes = plt.subplots(2, max_k // 2, figsize=(15, 6))
     axes = axes.ravel()
     calculate_MSE = image is not None
 
     for k in first_k_components:
-        # Use the first k components
+        # use the first k components
         selected_components = components[:k, :]
         
-        # Encode and reconstruct the image
+        # encode and reconstruct the image
         encoded_blocks = encode_blocks(flattened_blocks, mean_vector, selected_components)
         reconstructed_image = reconstruct_image(encoded_blocks, mean_vector, selected_components)
 
@@ -193,7 +190,7 @@ def reconstruct_with_first_k_components(flattened_blocks, mean_vector, component
             mse = np.mean((image - reconstructed_image) ** 2)
             print(f"MSE for k={k}: {mse:.4f}")
         
-        # Plot the reconstructed image
+        # plot the reconstructed image
         ax = axes[k - 1]
         ax.imshow(reconstructed_image, cmap='gray')
         ax.set_title(f'First {k} Components')

@@ -139,16 +139,24 @@ def blocks_to_image(blocks_4d):
     return blocks_4d.transpose(0, 2, 1, 3).reshape(256, 256)
 
 
-def plot_pca_eigenvalues(centered_data):
+def plot_pca_eigenvalues(centered_data, learned_components = None):
     cov_matrix = centered_data.T @ centered_data / centered_data.shape[0]
     eigenvalues, _ = np.linalg.eigh(cov_matrix)
     eigenvalues = np.flip(np.sort(eigenvalues))
 
     plt.figure(figsize=(10, 4))
-    plt.plot(eigenvalues, marker='o')
-    plt.title("Eigenvalues of the PCA Correlation Matrix")
+    plt.plot(eigenvalues, marker='o', label='Covariance Eigenvalues')
+
+    if learned_components is not None:
+        projections = centered_data @ learned_components.T
+        eigenvalues_learned = np.var(projections, axis=0)
+        plt.plot(eigenvalues_learned, marker='x', label="Learned Components Eigenvalues")
+
+
+    plt.title("Eigenvalues Comparison")
     plt.xlabel("Principal Component Index")
     plt.ylabel("Eigenvalue")
+    plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.show()

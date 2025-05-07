@@ -16,4 +16,6 @@ pca.ipynb  - jupyter notebook with image loading, compressing, reconstructing an
 
 utils.py - contains functions that do the compressing and reconstructing, and visualization
 
-GHA.py - contains GHA class that handles the training (both sequential and parallel mode) 
+GHA.py - contains GHA class that handles the training (both sequential and parallel mode)
+
+ann_pca_project_report.pdf - report about the project

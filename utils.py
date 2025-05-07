@@ -21,7 +21,7 @@ def blockify(image, h, w):
 
 
 def mean_center(X):
-    mean_vector = np.mean(X, axis=0)  # shape: (64,)
+    mean_vector = np.mean(X, axis=0)  # shape (64,)
     centered_X = X - mean_vector
     return centered_X, mean_vector
 
@@ -42,8 +42,8 @@ def visualize_components(components, num_rows=2, num_cols=4):
 
 
 def encode_blocks(blocks, mean_vector, components):
-    centered = blocks - mean_vector  # shape: (1024, 64)
-    codes = centered @ components.T  # shape: (1024, k)
+    centered = blocks - mean_vector  # (1024, 64)
+    codes = centered @ components.T  # (1024, k)
     return codes
 
 
@@ -122,15 +122,15 @@ def reconstruct_image(encoded_blocks, mean_vector, components):
 
 def reconstruct_blocks(encoded_blocks, mean_vector, components):
     # reconstruct centered data
-    reconstructed_centered = encoded_blocks @ components  # shape: (1024, 64)
+    reconstructed_centered = encoded_blocks @ components
 
     # add the mean back
-    reconstructed = reconstructed_centered + mean_vector  # broadcast: (1024, 64)
+    reconstructed = reconstructed_centered + mean_vector
 
     return reconstructed
 
 def reshape_blocks(flat_blocks):
-    # reshape from (1024, 64) → (32, 32, 8, 8)
+    # reshape from (1024, 64) to (32, 32, 8, 8)
     return flat_blocks.reshape(32, 32, 8, 8)
 
 
